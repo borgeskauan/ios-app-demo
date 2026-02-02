@@ -1,10 +1,7 @@
 import SwiftUI
 
 struct CalculatorView: View {
-  @State private var display = "0"
-  @State private var previousValue = 0.0
-  @State private var operation: String? = nil
-  @State private var isNewInput = true
+  @StateObject private var viewModel = CalculatorViewModel()
 
   let buttons: [[String]] = [
     ["C", "+/-", "%", "÷"],
@@ -16,36 +13,67 @@ struct CalculatorView: View {
 
   var body: some View {
     ZStack {
-      Color.black.ignoresSafeArea()
+      LinearGradient(
+        gradient: Gradient(colors: [
+          Color(UIColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 1)),
+          Color(UIColor(red: 0.1, green: 0.05, blue: 0.2, alpha: 1))
+        ]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+      )
+      .ignoresSafeArea()
 
-      VStack(spacing: 12) {
+      VStack(spacing: 20) {
+        // Header
+        VStack(alignment: .center, spacing: 4) {
+          Text("Calculator")
+            .font(.system(size: 28, weight: .bold))
+            .foregroundColor(.white)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 20)
+
         // Display
         VStack(alignment: .trailing) {
-          Text(display)
-            .font(.system(size: 60, weight: .light))
+          Text(viewModel.display)
+            .font(.system(size: 70, weight: .thin, design: .default))
             .foregroundColor(.white)
             .lineLimit(1)
             .minimumScaleFactor(0.5)
+            .tracking(1)
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding()
-        .background(Color(UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1)))
-        .cornerRadius(10)
+        .frame(height: 120)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+          LinearGradient(
+            gradient: Gradient(colors: [
+              Color(UIColor(red: 0.15, green: 0.1, blue: 0.25, alpha: 1)),
+              Color(UIColor(red: 0.1, green: 0.08, blue: 0.2, alpha: 1))
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
+        .padding(.horizontal, 16)
 
         // Buttons
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
           ForEach(buttons, id: \.self) { row in
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
               if row.count == 4 {
                 ForEach(row, id: \.self) { button in
                   CalculatorButton(label: button, action: {
-                    handleButtonTap(button)
+                    viewModel.handleButtonTap(button)
                   })
                 }
               } else if row.count == 3 {
                 ForEach(row, id: \.self) { button in
                   CalculatorButton(label: button, action: {
-                    handleButtonTap(button)
+                    viewModel.handleButtonTap(button)
                   })
                 }
                 Spacer()
@@ -53,91 +81,25 @@ struct CalculatorView: View {
             }
           }
         }
-        .padding()
-        .background(Color(UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1)))
-        .cornerRadius(10)
+        .padding(16)
+        .background(
+          LinearGradient(
+            gradient: Gradient(colors: [
+              Color(UIColor(red: 0.08, green: 0.08, blue: 0.12, alpha: 1)),
+              Color(UIColor(red: 0.06, green: 0.06, blue: 0.1, alpha: 1))
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
+        .padding(.horizontal, 16)
 
         Spacer()
       }
-      .padding()
+      .padding(.bottom, 20)
     }
-  }
-
-  private func handleButtonTap(_ button: String) {
-    switch button {
-    case "C":
-      display = "0"
-      previousValue = 0
-      operation = nil
-      isNewInput = true
-
-    case "=":
-      if let op = operation {
-        let currentValue = Double(display) ?? 0
-        let result = calculate(previousValue, currentValue, op)
-        display = formatResult(result)
-        previousValue = result
-        operation = nil
-        isNewInput = true
-      }
-
-    case "+", "-", "×", "÷":
-      let currentValue = Double(display) ?? 0
-      if let op = operation {
-        let result = calculate(previousValue, currentValue, op)
-        display = formatResult(result)
-        previousValue = result
-      } else {
-        previousValue = currentValue
-      }
-      operation = button
-      isNewInput = true
-
-    case "+/-":
-      if let value = Double(display) {
-        display = formatResult(-value)
-      }
-
-    case "%":
-      if let value = Double(display) {
-        display = formatResult(value / 100)
-      }
-
-    case ".":
-      if !display.contains(".") {
-        display += "."
-        isNewInput = false
-      }
-
-    default:
-      if isNewInput {
-        display = button
-        isNewInput = false
-      } else {
-        if display == "0" && button != "0" {
-          display = button
-        } else if display != "0" {
-          display += button
-        }
-      }
-    }
-  }
-
-  private func calculate(_ a: Double, _ b: Double, _ op: String) -> Double {
-    switch op {
-    case "+": return a + b
-    case "-": return a - b
-    case "×": return a * b
-    case "÷": return b != 0 ? a / b : 0
-    default: return b
-    }
-  }
-
-  private func formatResult(_ value: Double) -> String {
-    if value.truncatingRemainder(dividingBy: 1) == 0 {
-      return String(Int(value))
-    }
-    return String(format: "%.2f", value).replacingOccurrences(of: ",", with: ".")
   }
 }
 
