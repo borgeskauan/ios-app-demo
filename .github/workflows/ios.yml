@@ -32,8 +32,7 @@ jobs:
         env:
           APPETIZE_TOKEN: ${{ secrets.APPETIZE_TOKEN }}
         run: |
-          curl -fS \
-            -H "X-API-Token: $APPETIZE_TOKEN" \
-            -F "file=@app.zip" \
-            -F "platform=ios" \
-            https://api.appetize.io/v1/apps
+          curl -fS -X POST https://api.appetize.io/v1/apps \
+          -H "X-API-KEY: $APPETIZE_TOKEN" \
+          -F "file=@app.zip" \
+          -F "platform=ios"
