@@ -12,13 +12,18 @@ jobs:
       # Build a simulator .app (example destinations; adapt to your scheme/workspace)
       - name: Build for iOS Simulator
         run: |
+          UDID="$(
+            xcrun simctl list devices available |
+            awk -F '[()]' '/iPhone/{print $2; exit}'
+          )"
+
           xcodebuild \
-          -project MyApp.xcodeproj \
-          -scheme "MyApp" \
-          -configuration Debug \
-          -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
-          -derivedDataPath build \
-          build
+            -project MyApp.xcodeproj \
+            -scheme MyApp \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build \
+            build
 
       # Find the .app and zip it (adjust path as needed)
       - name: Zip .app
