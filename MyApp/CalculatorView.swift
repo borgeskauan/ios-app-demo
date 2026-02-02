@@ -40,7 +40,6 @@ struct CalculatorView: View {
             .foregroundColor(.white)
             .lineLimit(1)
             .minimumScaleFactor(0.5)
-            .tracking(1)
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .frame(height: 120)
