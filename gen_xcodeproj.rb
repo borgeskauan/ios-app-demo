@@ -80,12 +80,7 @@ main_group = project.main_group
 # Group named APP_NAME pointing to the APP_NAME folder
 app_group = main_group.new_group(APP_NAME, APP_NAME)
 
-# IMPORTANT: since app_group already points at ./APP_NAME,
-# the file path inside it should be just the filename.
-swift_ref = app_group.new_file("#{APP_NAME}App.swift")
-
-# Optionally reference Info.plist in the project navigator (not required for building)
-# This avoids duplicates if the script is adjusted not to rm_rf the xcodeproj.
+# Show Info.plist in navigator (optional)
 main_group.new_file("Info.plist")
 
 # Target: iOS application
@@ -101,11 +96,45 @@ target.build_configurations.each do |cfg|
   cfg.build_settings["GENERATE_INFOPLIST_FILE"] = "NO"
 end
 
-# Add sources to build phase
-target.add_file_references([swift_ref])
+# --- Auto-add all Swift sources under ./APP_NAME -----------------------------
+
+def subgroup_for_path(root_group, relative_dir)
+  # relative_dir like "Views/Subviews" or "" (top level)
+  return root_group if relative_dir.nil? || relative_dir.empty?
+
+  current = root_group
+  relative_dir.split("/").each do |folder|
+    existing = current.groups.find { |g| g.display_name == folder }
+    current = existing || current.new_group(folder, folder)
+  end
+  current
+end
+
+swift_paths = Dir.glob(File.join(root, APP_NAME, "**", "*.swift")).sort
+raise "No Swift files found under ./#{APP_NAME}" if swift_paths.empty?
+
+file_refs = []
+
+swift_paths.each do |abs_path|
+  # e.g. "/repo/MyApp/Views/CalculatorView.swift"
+  rel_from_app = abs_path.sub(%r{\A#{Regexp.escape(File.join(root, APP_NAME))}/?}, "")
+  # rel_from_app => "Views/CalculatorView.swift" OR "MyAppApp.swift"
+  dir = File.dirname(rel_from_app)
+  dir = "" if dir == "."
+  base = File.basename(rel_from_app)
+
+  group = subgroup_for_path(app_group, dir)
+  file_refs << group.new_file(base)
+end
+
+# Add all sources to build phase
+target.add_file_references(file_refs)
+
+# -----------------------------------------------------------------------------
 
 project.save
 
 puts "Generated: #{APP_NAME}.xcodeproj"
-puts "Source:    #{APP_NAME}/#{APP_NAME}App.swift"
+puts "App dir:   #{APP_NAME}/"
 puts "Plist:     Info.plist"
+puts "Swift:     #{swift_paths.length} file(s) added"
