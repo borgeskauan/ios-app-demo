@@ -77,11 +77,16 @@ project = Xcodeproj::Project.new(proj_path)
 # Groups / file refs
 main_group = project.main_group
 
-# Create a group named APP_NAME pointing to the APP_NAME folder
+# Group named APP_NAME pointing to the APP_NAME folder
 app_group = main_group.new_group(APP_NAME, APP_NAME)
 
-swift_ref = app_group.new_file(File.join(APP_NAME, "#{APP_NAME}App.swift"))
-plist_ref = main_group.new_file("Info.plist") # referenced via build setting
+# IMPORTANT: since app_group already points at ./APP_NAME,
+# the file path inside it should be just the filename.
+swift_ref = app_group.new_file("#{APP_NAME}App.swift")
+
+# Optionally reference Info.plist in the project navigator (not required for building)
+# This avoids duplicates if the script is adjusted not to rm_rf the xcodeproj.
+main_group.new_file("Info.plist")
 
 # Target: iOS application
 target = project.new_target(:application, APP_NAME, :ios, IOS_DEPLOYMENT)
@@ -93,8 +98,6 @@ target.build_configurations.each do |cfg|
   cfg.build_settings["SWIFT_VERSION"] = "5.0"
   cfg.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = IOS_DEPLOYMENT
   cfg.build_settings["TARGETED_DEVICE_FAMILY"] = "1,2" # iPhone + iPad
-
-  # SwiftUI apps typically use scenes; keep main.m absent.
   cfg.build_settings["GENERATE_INFOPLIST_FILE"] = "NO"
 end
 
@@ -104,5 +107,5 @@ target.add_file_references([swift_ref])
 project.save
 
 puts "Generated: #{APP_NAME}.xcodeproj"
-puts "Sources:   #{APP_NAME}/#{APP_NAME}App.swift"
+puts "Source:    #{APP_NAME}/#{APP_NAME}App.swift"
 puts "Plist:     Info.plist"
