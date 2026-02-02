@@ -9,6 +9,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Install Ruby + Bundler deps (cached)
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      # Generate the Xcode project every run
+      - name: Generate xcodeproj
+        run: |
+          bundle exec ruby gen_xcodeproj.rb
+          ls -la
+          ls -la *.xcodeproj || true
+
+      # Optional: show schemes so you can confirm the scheme name is stable
+      - name: List schemes
+        run: |
+          XCODEPROJ="$(ls -1 *.xcodeproj | head -n 1)"
+          xcodebuild -list -project "$XCODEPROJ"
+
       # Build a simulator .app (example destinations; adapt to your scheme/workspace)
       - name: Build for iOS Simulator
         run: |
