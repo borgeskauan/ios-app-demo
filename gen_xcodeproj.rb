@@ -14,11 +14,12 @@ proj_path = File.join(root, "#{APP_NAME}.xcodeproj")
 # Clean re-run support
 FileUtils.rm_rf(proj_path)
 
-# Create basic source layout
-sources_dir = File.join(root, "Sources", APP_NAME)
-FileUtils.mkdir_p(sources_dir)
+# Create "Xcode-native" source layout:
+#   <APP_NAME>/<APP_NAME>App.swift
+app_dir = File.join(root, APP_NAME)
+FileUtils.mkdir_p(app_dir)
 
-app_swift = File.join(sources_dir, "#{APP_NAME}App.swift")
+app_swift = File.join(app_dir, "#{APP_NAME}App.swift")
 info_plist = File.join(root, "Info.plist")
 
 unless File.exist?(app_swift)
@@ -75,11 +76,12 @@ project = Xcodeproj::Project.new(proj_path)
 
 # Groups / file refs
 main_group = project.main_group
-sources_group = main_group.new_group("Sources", "Sources")
-app_group = sources_group.new_group(APP_NAME, File.join("Sources", APP_NAME))
 
-swift_ref = app_group.new_file(File.join("Sources", APP_NAME, "#{APP_NAME}App.swift"))
-plist_ref = main_group.new_file("Info.plist")
+# Create a group named APP_NAME pointing to the APP_NAME folder
+app_group = main_group.new_group(APP_NAME, APP_NAME)
+
+swift_ref = app_group.new_file(File.join(APP_NAME, "#{APP_NAME}App.swift"))
+plist_ref = main_group.new_file("Info.plist") # referenced via build setting
 
 # Target: iOS application
 target = project.new_target(:application, APP_NAME, :ios, IOS_DEPLOYMENT)
@@ -91,6 +93,9 @@ target.build_configurations.each do |cfg|
   cfg.build_settings["SWIFT_VERSION"] = "5.0"
   cfg.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = IOS_DEPLOYMENT
   cfg.build_settings["TARGETED_DEVICE_FAMILY"] = "1,2" # iPhone + iPad
+
+  # SwiftUI apps typically use scenes; keep main.m absent.
+  cfg.build_settings["GENERATE_INFOPLIST_FILE"] = "NO"
 end
 
 # Add sources to build phase
@@ -99,3 +104,5 @@ target.add_file_references([swift_ref])
 project.save
 
 puts "Generated: #{APP_NAME}.xcodeproj"
+puts "Sources:   #{APP_NAME}/#{APP_NAME}App.swift"
+puts "Plist:     Info.plist"
