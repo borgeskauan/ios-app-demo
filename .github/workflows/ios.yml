@@ -1,0 +1,38 @@
+name: Build iOS Simulator + Upload to Appetize
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-upload:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build a simulator .app (example destinations; adapt to your scheme/workspace)
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild \
+            -scheme "YourScheme" \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -derivedDataPath build \
+            build
+
+      # Find the .app and zip it (adjust path as needed)
+      - name: Zip .app
+        run: |
+          APP_PATH="$(find build -type d -name '*.app' | head -n 1)"
+          echo "Using app: $APP_PATH"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" app.zip
+
+      # Upload using Appetize API via direct file upload (example; adapt fields to your needs)
+      - name: Upload to Appetize
+        env:
+          APPETIZE_TOKEN: ${{ secrets.APPETIZE_TOKEN }}
+        run: |
+          curl -fS \
+            -H "X-API-Token: $APPETIZE_TOKEN" \
+            -F "file=@app.zip" \
+            -F "platform=ios" \
+            https://api.appetize.io/v1/apps
