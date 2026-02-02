@@ -29,7 +29,8 @@ jobs:
       # Optional: show schemes so you can confirm the scheme name is stable
       - name: List schemes
         run: |
-          XCODEPROJ="$(ls -1 *.xcodeproj | head -n 1)"
+          XCODEPROJ="MyApp.xcodeproj"
+          ls -la "$XCODEPROJ"
           xcodebuild -list -project "$XCODEPROJ"
 
       # Build a simulator .app (example destinations; adapt to your scheme/workspace)
